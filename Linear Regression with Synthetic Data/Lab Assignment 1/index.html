@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TFJS Neural Network Regression</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; background-color: #f0f2f5; }
+        .container { width: 850px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .stats { background: #fff9db; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid #ffe066; width: 100%; box-sizing: border-box; }
+        .code-text { font-family: monospace; color: #e64980; font-weight: bold; background: #fff0f6; padding: 2px 5px; border-radius: 4px; }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        .status-tag { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+        .training { background: #d0ebff; color: #1971c2; }
+        .ready { background: #d3f9d8; color: #2b8a3e; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>TensorFlow.js Regression</h1>
+        <p>A Neural Network learning synthetic data patterns in real-time.</p>
+        <p><i>Open Console (F12) and type: <span class="code-text">addData(x, y)</span></i></p>
+        
+        <canvas id="chart1"></canvas>
+
+        <div class="stats" id="statsBox">
+            <h3>Model Diagnostics:</h3>
+            <p>Status: <span id="status" class="status-tag ready">Ready</span></p>
+            <p>Current Training Loss (MSE): <span id="mse" class="code-text">0.0000</span></p>
+            <p>Data Points Count: <span id="count" class="code-text">5</span></p>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('chart1').getContext('2d');
+        let points = [
+            {x: 1, y: 2.1}, {x: 2, y: 3.9}, {x: 3, y: 6.2}, {x: 4, y: 8.1}, {x: 5, y: 10.5}
+        ];
+
+        // 1. Initialize Chart.js
+        const myChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'Actual Data', data: points, backgroundColor: '#3498db', pointRadius: 6 },
+                    { label: 'Model Prediction', data: [], type: 'line', borderColor: '#e74c3c', borderDash: [5, 5], fill: false, pointRadius: 0 }
+                ]
+            },
+            options: { scales: { x: { type: 'linear', position: 'bottom' } } }
+        });
+
+        // 2. Define the TensorFlow Model (Linear Regression)
+        const model = tf.sequential();
+        model.add(tf.layers.dense({units: 1, inputShape: [1]}));
+        model.compile({optimizer: tf.train.sgd(0.01), loss: 'meanSquaredError'});
+
+        async function trainAndPredict() {
+            const statusEl = document.getElementById('status');
+            statusEl.innerText = "Training...";
+            statusEl.className = "status-tag training";
+
+            // Convert data to Tensors
+            const xs = tf.tensor2d(points.map(p => p.x), [points.length, 1]);
+            const ys = tf.tensor2d(points.map(p => p.y), [points.length, 1]);
+
+            // Train the model
+            const history = await model.fit(xs, ys, {
+                epochs: 100,
+                callbacks: {
+                    onEpochEnd: (epoch, logs) => {
+                        document.getElementById('mse').innerText = logs.loss.toFixed(6);
+                    }
+                }
+            });
+
+            // Generate prediction line points
+            const lineX = [];
+            const minX = Math.min(...points.map(p => p.x)) - 1;
+            const maxX = Math.max(...points.map(p => p.x)) + 1;
+            for (let i = minX; i <= maxX; i += 0.5) lineX.push(i);
+
+            const xsPredict = tf.tensor2d(lineX, [lineX.length, 1]);
+            const ysPredict = model.predict(xsPredict);
+            const predictionValues = await ysPredict.data();
+
+            // Update Chart
+            myChart.data.datasets[1].data = lineX.map((x, i) => ({x: x, y: predictionValues[i]}));
+            myChart.update();
+
+            // Cleanup Tensors
+            xs.dispose(); ys.dispose(); xsPredict.dispose(); ysPredict.dispose();
+
+            statusEl.innerText = "Ready";
+            statusEl.className = "status-tag ready";
+            document.getElementById('count').innerText = points.length;
+        }
+
+        // 3. Console Interaction
+        window.addData = (x, y) => {
+            points.push({x: x, y: y});
+            myChart.data.datasets[0].data = points;
+            trainAndPredict();
+            console.log(`%c Point Added: (${x}, ${y}) `, 'background: #222; color: #bada55');
+        };
+
+        // Initial Run
+        trainAndPredict();
+    </script>
+</body>
+</html>
