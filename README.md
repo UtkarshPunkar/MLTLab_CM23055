@@ -14,32 +14,7 @@ The objective of this course is to provide hands-on experience with modern ML te
 - **Repository:** MLTLab_CM23055  
 - **Technology Stack:** JavaScript + TensorFlow.js  
 - **Platform:** Web Browser  
-
----
-
-## 🎯 Learning Outcomes
-
-By completing this lab, I gained practical knowledge in:
-
-- Understanding tensor operations and data representation  
-- Training regression and classification models  
-- Applying deep learning for image, text, and pose recognition  
-- Building real-time ML applications using webcam and gestures  
-- Performing transfer learning for custom datasets  
-- Evaluating model performance and analyzing accuracy  
-- Deploying trained models directly in the browser  
-
----
-
-## 🧠 Skills Developed
-
-✔ Machine Learning fundamentals  
-✔ Browser-based model deployment  
-✔ Real-time inference  
-✔ Model evaluation and optimization  
-✔ JavaScript ML workflows  
-✔ Version control using Git and GitHub  
-
+ 
 ---
 
 ## 📁 Repository Structure
@@ -51,15 +26,6 @@ Each folder in this repository represents a practical implementation and contain
 - Result documents (PDF)  
 
 All experiments are committed separately to maintain clear version history.
-
----
-
-## ✨ Key Highlights
-
-- Fully client-side Machine Learning using TensorFlow.js  
-- Modular folder organization  
-- Separate commits for assignments and outputs  
-- Hands-on approach to real-world ML applications  
 
 ---
 
