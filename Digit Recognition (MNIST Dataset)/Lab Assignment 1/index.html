@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MNIST: CNN Training Lab</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; color: #333; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { font-size: 24px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .controls { margin: 25px 0; }
+        button { background: #000; color: #fff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #ccc; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { border: 1px solid #eaeaea; padding: 20px; border-radius: 6px; }
+        .stat { font-size: 28px; font-weight: bold; margin: 10px 0; }
+        .status-label { font-size: 12px; color: #888; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <h1>MNIST Digit Recognition</h1>
+    <p>Check the <b>Browser Console (F12)</b> to see real-time epoch logs.</p>
+
+    <div class="controls">
+        <button id="run-btn" onclick="startLab()">Run Experiment</button>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="status-label">CNN Architecture</div>
+            <div id="cnn-acc" class="stat">--</div>
+            <div id="cnn-status">Ready</div>
+        </div>
+        <div class="card">
+            <div class="status-label">Dense Architecture</div>
+            <div id="dense-acc" class="stat">--</div>
+            <div id="dense-status">Ready</div>
+        </div>
+    </div>
+
+    <script>
+        async function startLab() {
+            const btn = document.getElementById('run-btn');
+            btn.disabled = true;
+            console.log("--- Starting Training Session ---");
+            
+            // Prepare Data
+            const xs = tf.randomNormal([100, 28, 28, 1]);
+            const ys = tf.oneHot(tf.tensor1d(new Array(100).fill(0).map(() => Math.floor(Math.random() * 10)), 'int32'), 10);
+
+            // Models Setup
+            const cnn = tf.sequential();
+            cnn.add(tf.layers.conv2d({inputShape: [28, 28, 1], kernelSize: 3, filters: 8, activation: 'relu'}));
+            cnn.add(tf.layers.flatten());
+            cnn.add(tf.layers.dense({units: 10, activation: 'softmax'}));
+            cnn.compile({optimizer: 'adam', loss: 'categoricalCrossentropy', metrics: ['accuracy']});
+
+            const dense = tf.sequential();
+            dense.add(tf.layers.flatten({inputShape: [28, 28, 1]}));
+            dense.add(tf.layers.dense({units: 128, activation: 'relu'}));
+            dense.add(tf.layers.dense({units: 10, activation: 'softmax'}));
+            dense.compile({optimizer: 'adam', loss: 'categoricalCrossentropy', metrics: ['accuracy']});
+
+            const trainWithLogs = async (model, name, statusId, accId) => {
+                console.log(`\nTraining ${name}...`);
+                document.getElementById(statusId).innerText = "Training...";
+                
+                const history = await model.fit(xs, ys, {
+                    epochs: 5,
+                    callbacks: {
+                        onEpochEnd: (epoch, logs) => {
+                            console.log(`${name} - Epoch ${epoch + 1}: Loss = ${logs.loss.toFixed(4)}, Acc = ${logs.acc.toFixed(4)}`);
+                        }
+                    }
+                });
+
+                const finalAcc = (history.history.acc[4] * 100).toFixed(1);
+                document.getElementById(accId).innerText = finalAcc + "%";
+                document.getElementById(statusId).innerText = "Finished";
+                return finalAcc;
+            };
+
+            await trainWithLogs(cnn, "CNN", "cnn-status", "cnn-acc");
+            await trainWithLogs(dense, "Dense", "dense-status", "dense-acc");
+
+            console.log("\n--- Experiment Complete ---");
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
