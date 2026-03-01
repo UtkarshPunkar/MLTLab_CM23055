@@ -17,7 +17,7 @@ The objective of this course is to provide hands-on experience with modern ML te
  
 ---
 
-## 📁 Repository Structure
+## 📁 Repository Structure:
 
 Each folder in this repository represents a practical implementation and contains:
 
