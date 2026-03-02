@@ -8,7 +8,7 @@ The objective of this course is to provide hands-on experience with modern ML te
 
 ---
 
-## 👨‍🎓 Student Information
+## 👨‍🎓 About:
 
 - **Course:** Machine Learning Technology Lab  
 - **Repository:** MLTLab_CM23055  
