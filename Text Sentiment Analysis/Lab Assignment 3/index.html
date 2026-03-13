@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RNN vs Dense Sentiment Comparison</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+<style>
+
+body{
+font-family: Arial;
+background:#f2f4f8;
+display:flex;
+justify-content:center;
+padding:40px;
+}
+
+.container{
+width:750px;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 6px 20px rgba(0,0,0,0.1);
+}
+
+h1{
+text-align:center;
+color:#333;
+}
+
+button{
+background:#4CAF50;
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:6px;
+cursor:pointer;
+font-size:16px;
+display:block;
+margin:auto;
+}
+
+button:hover{
+background:#43a047;
+}
+
+.status{
+text-align:center;
+margin-top:10px;
+font-weight:bold;
+}
+
+.logs{
+background:#1e1e1e;
+color:#00ff9c;
+padding:12px;
+height:160px;
+overflow-y:auto;
+border-radius:5px;
+font-family:monospace;
+margin-top:20px;
+}
+
+.results{
+display:flex;
+justify-content:space-between;
+margin-top:25px;
+}
+
+.card{
+width:48%;
+padding:15px;
+border-radius:8px;
+text-align:center;
+}
+
+.dense{
+background:#e3f2fd;
+}
+
+.rnn{
+background:#f3e5f5;
+}
+
+.winner{
+margin-top:20px;
+text-align:center;
+font-size:18px;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Sentiment Model Comparison</h1>
+
+<button onclick="runExperiment()">Train & Compare Models</button>
+
+<div class="status" id="status">Status: Ready</div>
+
+<div class="logs" id="logs"></div>
+
+<div class="results">
+
+<div class="card dense">
+<h3>Dense Network</h3>
+<p id="denseAcc">Accuracy: -</p>
+</div>
+
+<div class="card rnn">
+<h3>RNN (LSTM)</h3>
+<p id="rnnAcc">Accuracy: -</p>
+</div>
+
+</div>
+
+<div class="winner" id="winner"></div>
+
+</div>
+
+<script>
+
+// dataset
+const data=[
+{text:"i love this product",label:1},
+{text:"this is amazing",label:1},
+{text:"very happy with this",label:1},
+{text:"fantastic experience",label:1},
+
+{text:"i hate this",label:0},
+{text:"this is terrible",label:0},
+{text:"very bad product",label:0},
+{text:"worst experience",label:0}
+];
+
+// vocabulary
+const words=Array.from(new Set(data.flatMap(d=>d.text.split(" "))));
+const vocab=Object.fromEntries(words.map((w,i)=>[w,i+1]));
+
+const vocabSize=words.length+1;
+const maxLen=4;
+
+// encode text
+function encode(text){
+
+let tokens=text.toLowerCase().split(" ").map(w=>vocab[w]||0);
+
+if(tokens.length<maxLen){
+tokens=[...tokens,...Array(maxLen-tokens.length).fill(0)];
+}else{
+tokens=tokens.slice(0,maxLen);
+}
+
+return tokens;
+}
+
+// tensors
+const xs=tf.tensor2d(data.map(d=>encode(d.text)));
+const ys=tf.tensor2d(data.map(d=>[d.label]));
+
+// dense model
+function createDense(){
+
+const model=tf.sequential();
+
+model.add(tf.layers.embedding({
+inputDim:vocabSize,
+outputDim:8,
+inputLength:maxLen
+}));
+
+model.add(tf.layers.flatten());
+
+model.add(tf.layers.dense({
+units:1,
+activation:"sigmoid"
+}));
+
+model.compile({
+optimizer:"adam",
+loss:"binaryCrossentropy",
+metrics:["accuracy"]
+});
+
+return model;
+}
+
+// rnn model
+function createRNN(){
+
+const model=tf.sequential();
+
+model.add(tf.layers.embedding({
+inputDim:vocabSize,
+outputDim:8,
+inputLength:maxLen
+}));
+
+model.add(tf.layers.lstm({units:8}));
+
+model.add(tf.layers.dense({
+units:1,
+activation:"sigmoid"
+}));
+
+model.compile({
+optimizer:"adam",
+loss:"binaryCrossentropy",
+metrics:["accuracy"]
+});
+
+return model;
+}
+
+async function runExperiment(){
+
+const logs=document.getElementById("logs");
+const status=document.getElementById("status");
+
+logs.innerHTML="";
+status.innerText="Training Dense Model...";
+
+console.log("Training Dense Model");
+
+const dense=createDense();
+
+const denseHistory=await dense.fit(xs,ys,{epochs:30});
+
+const denseAcc=denseHistory.history.acc?.slice(-1)[0]||denseHistory.history.accuracy.slice(-1)[0];
+
+logs.innerHTML+="Dense training completed<br>";
+
+document.getElementById("denseAcc").innerText="Accuracy: "+denseAcc.toFixed(3);
+
+console.log("Dense Accuracy:",denseAcc);
+
+
+
+status.innerText="Training RNN Model...";
+
+console.log("Training RNN");
+
+const rnn=createRNN();
+
+const rnnHistory=await rnn.fit(xs,ys,{epochs:30});
+
+const rnnAcc=rnnHistory.history.acc?.slice(-1)[0]||rnnHistory.history.accuracy.slice(-1)[0];
+
+logs.innerHTML+="RNN training completed<br>";
+
+document.getElementById("rnnAcc").innerText="Accuracy: "+rnnAcc.toFixed(3);
+
+console.log("RNN Accuracy:",rnnAcc);
+
+
+
+let winner;
+
+if(rnnAcc>denseAcc){
+
+winner="RNN performs better for this task";
+
+}else{
+
+winner="Dense model performs similar or better";
+
+}
+
+document.getElementById("winner").innerText=winner;
+
+status.innerText="Comparison Complete";
+
+}
+
+</script>
+
+</body>
+</html>

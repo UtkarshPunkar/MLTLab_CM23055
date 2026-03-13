@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sentiment Analysis Console Test</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+<style>
+
+body{
+font-family: Arial;
+background:#f5f7fb;
+display:flex;
+justify-content:center;
+padding-top:60px;
+}
+
+.container{
+width:600px;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 8px 20px rgba(0,0,0,0.1);
+text-align:center;
+}
+
+h1{
+color:#333;
+}
+
+button{
+background:#4CAF50;
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:5px;
+cursor:pointer;
+margin-top:10px;
+}
+
+.result{
+margin-top:20px;
+padding:15px;
+border-radius:6px;
+font-size:18px;
+font-weight:bold;
+}
+
+.positive{
+background:#d4edda;
+color:#155724;
+}
+
+.negative{
+background:#f8d7da;
+color:#721c24;
+}
+
+.score{
+font-size:14px;
+margin-top:5px;
+color:#555;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Sentiment Analysis</h1>
+
+<p>Train the model and test sentences from Chrome Console</p>
+
+<button onclick="trainModel()">Train Model</button>
+
+<p id="status">Status: Ready</p>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+// Dataset
+const data = [
+{ text:"i love this product", label:1 },
+{ text:"this is amazing", label:1 },
+{ text:"very happy with this", label:1 },
+{ text:"fantastic experience", label:1 },
+
+{ text:"i hate this", label:0 },
+{ text:"this is terrible", label:0 },
+{ text:"very bad product", label:0 },
+{ text:"worst experience", label:0 }
+];
+
+
+// Vocabulary
+const words = Array.from(new Set(data.flatMap(d=>d.text.split(" "))));
+
+const vocab = Object.fromEntries(words.map((w,i)=>[w,i+1]));
+
+const vocabSize = words.length+1;
+const maxLen = 4;
+
+
+// Encode sentence
+function encode(text){
+
+let tokens = text.toLowerCase().split(" ").map(w=>vocab[w] || 0);
+
+if(tokens.length < maxLen){
+tokens = [...tokens,...Array(maxLen-tokens.length).fill(0)];
+}
+else{
+tokens = tokens.slice(0,maxLen);
+}
+
+return tokens;
+
+}
+
+
+// Prepare tensors
+const xs = tf.tensor2d(data.map(d=>encode(d.text)));
+const ys = tf.tensor2d(data.map(d=>[d.label]));
+
+
+// Model
+const model = tf.sequential();
+
+model.add(tf.layers.embedding({
+inputDim:vocabSize,
+outputDim:8,
+inputLength:maxLen
+}));
+
+model.add(tf.layers.flatten());
+
+model.add(tf.layers.dense({
+units:1,
+activation:"sigmoid"
+}));
+
+model.compile({
+optimizer:"adam",
+loss:"binaryCrossentropy",
+metrics:["accuracy"]
+});
+
+
+// Train model
+async function trainModel(){
+
+document.getElementById("status").innerText="Training model...";
+
+await model.fit(xs,ys,{epochs:40});
+
+document.getElementById("status").innerText="Training complete";
+
+console.log("Model trained!");
+console.log("Now type: testSentence('your sentence')");
+
+}
+
+
+// Test sentence from console
+function testSentence(text){
+
+const encoded = encode(text);
+
+const input = tf.tensor2d([encoded]);
+
+const prediction = model.predict(input);
+
+const score = prediction.dataSync()[0];
+
+let sentiment = score > 0.5 ? "Positive 😊" : "Negative 😞";
+
+const resultBox = document.getElementById("result");
+
+resultBox.innerHTML = `
+<div class="${score>0.5?'result positive':'result negative'}">
+Sentence: "${text}"<br>
+Prediction: ${sentiment}
+<div class="score">Confidence Score: ${score.toFixed(3)}</div>
+</div>
+`;
+
+console.log("Prediction displayed on webpage");
+
+}
+
+// expose to console
+window.testSentence = testSentence;
+
+</script>
+
+</body>
+</html>
