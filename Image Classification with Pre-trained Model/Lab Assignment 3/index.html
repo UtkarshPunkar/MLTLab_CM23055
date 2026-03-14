@@ -1,0 +1,170 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>MobileNet Model Comparison</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eef2f7;
+text-align:center;
+}
+
+.container{
+background:white;
+padding:30px;
+margin:auto;
+margin-top:40px;
+width:700px;
+border-radius:10px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+img{
+max-width:300px;
+margin-top:20px;
+border-radius:10px;
+}
+
+.results{
+display:flex;
+justify-content:space-around;
+margin-top:20px;
+text-align:left;
+}
+
+.box{
+width:45%;
+background:#f6f6f6;
+padding:15px;
+border-radius:8px;
+}
+
+button{
+margin-top:15px;
+padding:10px 20px;
+font-size:16px;
+background:#667eea;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Image Classification Comparison</h2>
+<p>MobileNet V1 vs MobileNet V2</p>
+
+<input type="file" id="upload">
+
+<br>
+
+<img id="preview">
+
+<br>
+
+<button onclick="classify()">Classify Image</button>
+
+<div class="results">
+
+<div class="box">
+<h3>MobileNet V1</h3>
+<div id="model1">Loading Model...</div>
+</div>
+
+<div class="box">
+<h3>MobileNet V2</h3>
+<div id="model2">Loading Model...</div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let model1;
+let model2;
+
+async function loadModels(){
+
+model1 = await mobilenet.load({
+version:1,
+alpha:1.0
+});
+
+document.getElementById("model1").innerHTML="Model Ready";
+
+model2 = await mobilenet.load({
+version:2,
+alpha:1.0
+});
+
+document.getElementById("model2").innerHTML="Model Ready";
+
+}
+
+const upload=document.getElementById("upload");
+const preview=document.getElementById("preview");
+
+upload.addEventListener("change",function(){
+
+const file=this.files[0];
+const reader=new FileReader();
+
+reader.onload=function(e){
+preview.src=e.target.result;
+}
+
+reader.readAsDataURL(file);
+
+});
+
+async function classify(){
+
+const img=document.getElementById("preview");
+
+if(!model1 || !model2){
+alert("Models are still loading...");
+return;
+}
+
+const pred1=await model1.classify(img);
+const pred2=await model2.classify(img);
+
+let r1="";
+let r2="";
+
+for(let i=0;i<3;i++){
+
+r1+=(i+1)+". "+pred1[i].className+
+" : "+(pred1[i].probability*100).toFixed(2)+"%<br>";
+
+r2+=(i+1)+". "+pred2[i].className+
+" : "+(pred2[i].probability*100).toFixed(2)+"%<br>";
+
+}
+
+document.getElementById("model1").innerHTML=r1;
+document.getElementById("model2").innerHTML=r2;
+
+}
+
+loadModels();
+
+</script>
+
+</body>
+</html>
+```

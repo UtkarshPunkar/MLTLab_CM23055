@@ -1,0 +1,175 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>MobileNet Drag & Drop Classifier</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+
+<style>
+
+body{
+font-family:Segoe UI,Arial;
+background:linear-gradient(135deg,#667eea,#764ba2);
+margin:0;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+color:white;
+}
+
+.container{
+background:white;
+color:#333;
+padding:30px;
+border-radius:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
+width:420px;
+text-align:center;
+}
+
+h2{
+margin-top:0;
+}
+
+#dropzone{
+border:3px dashed #bbb;
+border-radius:10px;
+height:220px;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+cursor:pointer;
+transition:0.3s;
+}
+
+#dropzone.hover{
+border-color:#667eea;
+background:#f3f4ff;
+}
+
+#preview{
+max-width:100%;
+max-height:160px;
+margin-top:10px;
+border-radius:8px;
+}
+
+.prediction{
+margin-top:12px;
+text-align:left;
+}
+
+.bar{
+height:10px;
+background:#eee;
+border-radius:6px;
+margin-top:5px;
+overflow:hidden;
+}
+
+.fill{
+height:100%;
+background:#667eea;
+}
+
+#result{
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🧠 MobileNet Image Classifier</h2>
+<p>Drag & Drop an image</p>
+
+<div id="dropzone">
+<span>Drop Image Here</span>
+<img id="preview">
+</div>
+
+<div id="result">
+Loading MobileNet model...
+</div>
+
+</div>
+
+<script>
+
+let model;
+
+async function loadModel(){
+model = await mobilenet.load();
+document.getElementById("result").innerHTML="Model Ready. Drop an image.";
+}
+
+const dropzone=document.getElementById("dropzone");
+const preview=document.getElementById("preview");
+
+dropzone.addEventListener("dragover",e=>{
+e.preventDefault();
+dropzone.classList.add("hover");
+});
+
+dropzone.addEventListener("dragleave",()=>{
+dropzone.classList.remove("hover");
+});
+
+dropzone.addEventListener("drop",async e=>{
+
+e.preventDefault();
+dropzone.classList.remove("hover");
+
+const file=e.dataTransfer.files[0];
+
+const reader=new FileReader();
+
+reader.onload=async event=>{
+
+preview.src=event.target.result;
+
+preview.onload=async ()=>{
+
+const predictions=await model.classify(preview);
+
+let html="<b>Top Predictions</b>";
+
+predictions.slice(0,3).forEach(p=>{
+
+const confidence=(p.probability*100).toFixed(1);
+
+html+=`
+<div class="prediction">
+${p.className} — ${confidence}%
+<div class="bar">
+<div class="fill" style="width:${confidence}%"></div>
+</div>
+</div>
+`;
+
+});
+
+document.getElementById("result").innerHTML=html;
+
+};
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+loadModel();
+
+</script>
+
+</body>
+</html>
+```
