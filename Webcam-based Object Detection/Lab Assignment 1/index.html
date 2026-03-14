@@ -1,0 +1,185 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>MobileNet Webcam Classifier</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eef2f7;
+text-align:center;
+margin:0;
+}
+
+h2{
+margin-top:20px;
+}
+
+.container{
+display:flex;
+justify-content:center;
+gap:30px;
+margin-top:20px;
+}
+
+video{
+border:3px solid #333;
+border-radius:10px;
+}
+
+.result{
+width:320px;
+height:220px;
+background:#00a884;
+color:white;
+padding:15px;
+border-radius:8px;
+overflow-y:auto;
+text-align:left;
+font-size:16px;
+}
+
+button{
+margin-top:15px;
+padding:10px 20px;
+font-size:16px;
+border:none;
+border-radius:6px;
+background:#ff9800;
+color:white;
+cursor:pointer;
+}
+
+canvas{
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>MobileNet Real-Time Classification</h2>
+
+<button onclick="toggle()">Pause / Resume</button>
+
+<div class="container">
+
+<video id="webcam" width="640" height="480" autoplay muted></video>
+
+<div id="result" class="result">
+Loading MobileNet model...
+</div>
+
+</div>
+
+<canvas id="canvas" width="224" height="224"></canvas>
+
+<script>
+
+let model;
+let detecting=true;
+let history=[];
+
+async function setupCamera(){
+
+const video=document.getElementById("webcam");
+
+const stream=await navigator.mediaDevices.getUserMedia({video:true});
+
+video.srcObject=stream;
+
+return new Promise(resolve=>{
+video.onloadedmetadata=()=>resolve(video);
+});
+
+}
+
+async function loadModel(){
+
+model=await mobilenet.load();
+console.log("MobileNet Loaded");
+
+}
+
+function toggle(){
+detecting=!detecting;
+}
+
+function getStablePrediction(){
+
+let counts={};
+
+history.forEach(p=>{
+counts[p]=(counts[p]||0)+1;
+});
+
+let best=null;
+let max=0;
+
+for(let key in counts){
+if(counts[key]>max){
+max=counts[key];
+best=key;
+}
+}
+
+return best;
+
+}
+
+async function predict(video){
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+ctx.drawImage(video,0,0,224,224);
+
+const predictions=await model.classify(canvas);
+
+const best=predictions[0];
+
+if(best.probability>0.3){
+
+history.push(best.className);
+
+if(history.length>5){
+history.shift();
+}
+
+const stable=getStablePrediction();
+
+document.getElementById("result").innerHTML=
+"<b>Detected Object</b><br><br>"+
+stable+"<br><br>"+
+"Confidence: "+(best.probability*100).toFixed(2)+"%";
+
+}
+
+if(detecting){
+setTimeout(()=>predict(video),400);
+}
+
+}
+
+async function main(){
+
+const video=await setupCamera();
+await loadModel();
+
+predict(video);
+
+}
+
+main();
+
+</script>
+
+</body>
+</html>
+```
