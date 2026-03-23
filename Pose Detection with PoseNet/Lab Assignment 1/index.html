@@ -1,0 +1,265 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Pose Detection Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:#0f172a;
+color:white;
+}
+
+/* HEADER */
+.header{
+padding:15px;
+text-align:center;
+background:#1e293b;
+font-size:20px;
+font-weight:bold;
+}
+
+/* LAYOUT */
+.container{
+display:flex;
+height:calc(100vh - 60px);
+}
+
+/* SIDEBAR */
+.sidebar{
+width:250px;
+background:#1e293b;
+padding:20px;
+display:flex;
+flex-direction:column;
+gap:20px;
+}
+
+/* STATUS BOX */
+.card{
+background:#334155;
+padding:15px;
+border-radius:10px;
+}
+
+/* PROGRESS */
+.bar{
+height:8px;
+background:#475569;
+border-radius:10px;
+margin-top:5px;
+}
+
+.fill{
+height:100%;
+background:#22c55e;
+border-radius:10px;
+transition:0.3s;
+}
+
+/* VIDEO AREA */
+.main{
+flex:1;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.videoBox{
+position:relative;
+width:700px;
+height:500px;
+border-radius:12px;
+overflow:hidden;
+box-shadow:0 0 30px rgba(0,0,0,0.5);
+}
+
+video, canvas{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+}
+
+video{
+transform: scaleX(-1);
+}
+
+/* FLOATING LABEL */
+.overlayLabel{
+position:absolute;
+top:20px;
+left:20px;
+background:rgba(0,0,0,0.7);
+padding:10px 15px;
+border-radius:8px;
+font-size:18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">AI Pose Detection Dashboard</div>
+
+<div class="container">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<div class="card">
+<div>Status:</div>
+<div id="status">Loading...</div>
+</div>
+
+<div class="card">
+Standing
+<div class="bar"><div id="standBar" class="fill" style="width:0%"></div></div>
+</div>
+
+<div class="card">
+Sitting
+<div class="bar"><div id="sitBar" class="fill" style="width:0%"></div></div>
+</div>
+
+</div>
+
+<!-- MAIN VIDEO -->
+<div class="main">
+<div class="videoBox">
+
+<div id="label" class="overlayLabel">Detecting...</div>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+let net;
+
+async function setupCamera(){
+
+const video=document.getElementById("video");
+
+const stream=await navigator.mediaDevices.getUserMedia({
+video:{width:640,height:480}
+});
+
+video.srcObject=stream;
+
+return new Promise(resolve=>{
+video.onloadedmetadata=()=>{
+video.play();
+resolve(video);
+};
+});
+
+}
+
+async function loadModel(){
+net=await posenet.load();
+}
+
+// DRAW
+function drawKeypoints(keypoints,ctx){
+keypoints.forEach(k=>{
+if(k.score>0.3){
+ctx.beginPath();
+ctx.arc(k.position.x,k.position.y,5,0,2*Math.PI);
+ctx.fillStyle="#ff4d4d";
+ctx.fill();
+}
+});
+}
+
+function drawSkeleton(keypoints,ctx){
+const adj=posenet.getAdjacentKeyPoints(keypoints,0.3);
+adj.forEach(pair=>{
+ctx.beginPath();
+ctx.moveTo(pair[0].position.x,pair[0].position.y);
+ctx.lineTo(pair[1].position.x,pair[1].position.y);
+ctx.strokeStyle="#22c55e";
+ctx.lineWidth=2;
+ctx.stroke();
+});
+}
+
+// CLASSIFY
+function classifyPose(keypoints){
+
+const hip=keypoints.find(k=>k.part==="leftHip");
+const knee=keypoints.find(k=>k.part==="leftKnee");
+
+if(hip.score>0.3 && knee.score>0.3){
+
+const diff=knee.position.y-hip.position.y;
+
+if(diff>100){
+return {label:"Standing",stand:85,sit:15};
+}else{
+return {label:"Sitting",stand:20,sit:80};
+}
+
+}
+
+return {label:"Detecting...",stand:50,sit:50};
+}
+
+// LOOP
+async function detect(video){
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+
+const pose=await net.estimateSinglePose(video,{flipHorizontal:true});
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+drawKeypoints(pose.keypoints,ctx);
+drawSkeleton(pose.keypoints,ctx);
+
+const result=classifyPose(pose.keypoints);
+
+// UI UPDATE
+document.getElementById("status").innerText=result.label;
+document.getElementById("label").innerText=result.label;
+
+document.getElementById("standBar").style.width=result.stand+"%";
+document.getElementById("sitBar").style.width=result.sit+"%";
+
+requestAnimationFrame(()=>detect(video));
+
+}
+
+async function main(){
+
+const video=await setupCamera();
+await loadModel();
+
+detect(video);
+
+}
+
+main();
+
+</script>
+
+</body>
+</html>
+```

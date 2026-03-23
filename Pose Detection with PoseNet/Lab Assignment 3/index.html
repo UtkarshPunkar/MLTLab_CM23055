@@ -1,0 +1,233 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PoseNet Analysis UI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
+text-align:center;
+}
+
+/* HEADER */
+.controls{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(10px);
+padding:20px;
+border-bottom:1px solid rgba(255,255,255,0.1);
+box-shadow:0 5px 20px rgba(0,0,0,0.3);
+}
+
+h2{
+margin:5px 0 15px 0;
+}
+
+/* BUTTONS */
+.mode-btn{
+padding:10px 20px;
+margin:5px;
+border:none;
+border-radius:20px;
+background:rgba(255,255,255,0.2);
+color:white;
+cursor:pointer;
+font-size:14px;
+transition:0.3s;
+}
+
+.mode-btn:hover{
+background:#00ffcc;
+color:black;
+}
+
+.active{
+background:#00ffcc;
+color:black;
+}
+
+/* STATS */
+.stat-box{
+display:flex;
+justify-content:center;
+gap:30px;
+margin-top:10px;
+font-size:15px;
+}
+
+.stat{
+background:rgba(0,0,0,0.4);
+padding:8px 15px;
+border-radius:8px;
+}
+
+/* LOG */
+#log{
+margin-top:10px;
+color:#ffd700;
+font-family:monospace;
+}
+
+/* VIDEO */
+.container{
+position:relative;
+margin-top:20px;
+display:inline-block;
+border-radius:12px;
+overflow:hidden;
+box-shadow:0 0 25px rgba(0,0,0,0.6);
+}
+
+video, canvas{
+transform:scaleX(-1);
+border-radius:12px;
+}
+
+canvas{
+position:absolute;
+top:0;
+left:0;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="controls">
+
+<h2>PoseNet Accuracy Dashboard</h2>
+
+<button id="btnSingle" class="mode-btn active" onclick="setMode('single')">Single Pose</button>
+<button id="btnMulti" class="mode-btn" onclick="setMode('multi')">Multi Pose</button>
+
+<div class="stat-box">
+<div class="stat">Mode: <span id="displayMode">Single</span></div>
+<div class="stat">Time: <span id="ms">0</span> ms</div>
+</div>
+
+<div id="log">Waiting for detection...</div>
+
+</div>
+
+<div class="container">
+<video id="video" width="640" height="480" autoplay muted playsinline></video>
+<canvas id="output" width="640" height="480"></canvas>
+</div>
+
+<script>
+
+let mode='single';
+let net;
+
+const video=document.getElementById('video');
+const canvas=document.getElementById('output');
+const ctx=canvas.getContext('2d');
+
+// MODE SWITCH
+function setMode(newMode){
+mode=newMode;
+
+btnSingle.classList.toggle('active',mode==='single');
+btnMulti.classList.toggle('active',mode==='multi');
+
+displayMode.innerText=mode.toUpperCase();
+}
+
+// CAMERA
+async function setupCamera(){
+const stream=await navigator.mediaDevices.getUserMedia({video:true});
+video.srcObject=stream;
+
+return new Promise(resolve=>{
+video.onloadedmetadata=()=>resolve(video);
+});
+}
+
+// DRAW
+function drawPose(pose){
+
+if(pose.score<0.15) return;
+
+const adj=posenet.getAdjacentKeyPoints(pose.keypoints,0.2);
+
+adj.forEach(pair=>{
+ctx.beginPath();
+ctx.moveTo(pair[0].position.x,pair[0].position.y);
+ctx.lineTo(pair[1].position.x,pair[1].position.y);
+ctx.strokeStyle=mode==='single' ? "#00ffcc" : "#ff4dff";
+ctx.lineWidth=2;
+ctx.stroke();
+});
+
+pose.keypoints.forEach(k=>{
+if(k.score>0.2){
+ctx.beginPath();
+ctx.arc(k.position.x,k.position.y,4,0,2*Math.PI);
+ctx.fillStyle="white";
+ctx.fill();
+}
+});
+
+}
+
+// LOOP
+async function loop(){
+
+const start=performance.now();
+let poses=[];
+
+if(mode==='single'){
+const pose=await net.estimateSinglePose(video,{flipHorizontal:true});
+poses.push(pose);
+}else{
+poses=await net.estimateMultiplePoses(video,{
+flipHorizontal:true,
+maxDetections:5,
+scoreThreshold:0.5,
+nmsRadius:20
+});
+}
+
+const end=performance.now();
+
+ms.innerText=(end-start).toFixed(1);
+log.innerText=`Detected ${poses.length} person(s)`;
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+poses.forEach(p=>drawPose(p));
+
+requestAnimationFrame(loop);
+}
+
+// MAIN
+async function main(){
+
+net=await posenet.load({
+architecture:'MobileNetV1',
+multiplier:0.5,
+inputResolution:257
+});
+
+await setupCamera();
+video.play();
+
+loop();
+}
+
+main();
+
+</script>
+
+</body>
+</html>
+```

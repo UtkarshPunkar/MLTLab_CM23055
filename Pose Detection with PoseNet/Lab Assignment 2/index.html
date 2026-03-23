@@ -1,0 +1,183 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Squat Counter</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:#eef2f7;
+}
+
+.container{
+position:relative;
+display:inline-block;
+}
+
+video, canvas{
+position:absolute;
+top:0;
+left:0;
+}
+
+video{
+transform: scaleX(-1);
+}
+
+.counter{
+margin-top:520px;
+font-size:28px;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Squat Counter (PoseNet)</h2>
+
+<div class="container">
+<video id="video" width="640" height="480" autoplay></video>
+<canvas id="canvas" width="640" height="480"></canvas>
+</div>
+
+<div class="counter">
+Squats: <span id="count">0</span>
+</div>
+
+<script>
+
+let net;
+let count = 0;
+let stage = "up"; // state tracking
+
+// CAMERA
+async function setupCamera(){
+const video=document.getElementById("video");
+
+const stream=await navigator.mediaDevices.getUserMedia({video:true});
+video.srcObject=stream;
+
+return new Promise(resolve=>{
+video.onloadedmetadata=()=>{
+video.play();
+resolve(video);
+};
+});
+}
+
+// LOAD MODEL
+async function loadModel(){
+net=await posenet.load();
+}
+
+// CALCULATE ANGLE
+function getAngle(a,b,c){
+
+const ab=[a.x-b.x, a.y-b.y];
+const cb=[c.x-b.x, c.y-b.y];
+
+const dot = ab[0]*cb[0] + ab[1]*cb[1];
+const magAB = Math.sqrt(ab[0]**2 + ab[1]**2);
+const magCB = Math.sqrt(cb[0]**2 + cb[1]**2);
+
+const angle = Math.acos(dot/(magAB*magCB));
+
+return angle * (180/Math.PI);
+}
+
+// DRAW
+function draw(keypoints, ctx){
+
+keypoints.forEach(k=>{
+if(k.score>0.3){
+ctx.beginPath();
+ctx.arc(k.position.x,k.position.y,5,0,2*Math.PI);
+ctx.fillStyle="red";
+ctx.fill();
+}
+});
+
+const adj=posenet.getAdjacentKeyPoints(keypoints,0.3);
+
+adj.forEach(p=>{
+ctx.beginPath();
+ctx.moveTo(p[0].position.x,p[0].position.y);
+ctx.lineTo(p[1].position.x,p[1].position.y);
+ctx.strokeStyle="lime";
+ctx.stroke();
+});
+
+}
+
+// MAIN LOOP
+async function detect(video){
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+const pose=await net.estimateSinglePose(video,{
+flipHorizontal:true
+});
+
+ctx.clearRect(0,0,640,480);
+draw(pose.keypoints,ctx);
+
+// GET KEYPOINTS
+const hip=pose.keypoints.find(k=>k.part==="leftHip");
+const knee=pose.keypoints.find(k=>k.part==="leftKnee");
+const ankle=pose.keypoints.find(k=>k.part==="leftAnkle");
+
+if(hip.score>0.3 && knee.score>0.3 && ankle.score>0.3){
+
+const angle = getAngle(
+hip.position,
+knee.position,
+ankle.position
+);
+
+// SHOW ANGLE
+ctx.fillStyle="yellow";
+ctx.font="20px Arial";
+ctx.fillText("Angle: "+angle.toFixed(1),50,50);
+
+// LOGIC
+if(angle > 160){
+stage = "up";
+}
+
+if(angle < 90 && stage === "up"){
+stage = "down";
+count++;
+document.getElementById("count").innerText = count;
+}
+
+}
+
+requestAnimationFrame(()=>detect(video));
+}
+
+// MAIN
+async function main(){
+
+const video=await setupCamera();
+await loadModel();
+
+detect(video);
+
+}
+
+main();
+
+</script>
+
+</body>
+</html>
+```
