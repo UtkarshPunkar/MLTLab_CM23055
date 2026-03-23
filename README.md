@@ -1,4 +1,4 @@
-# 🚀 Machine Learning Technology Lab (MLTLab_CM23055)
+# 🚀 Machine Learning Technology Lab (MLTLab_CM23055):
 
 Welcome to my **Machine Learning Technology Lab Repository**.
 
