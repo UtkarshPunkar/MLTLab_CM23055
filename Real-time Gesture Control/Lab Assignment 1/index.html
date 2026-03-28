@@ -1,0 +1,110 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Gesture Control</title>
+
+<style>
+body{
+font-family:Segoe UI;
+text-align:center;
+background:#0f172a;
+color:white;
+}
+
+#player{
+margin-top:10px;
+border-radius:12px;
+box-shadow:0 0 20px rgba(0,0,0,0.6);
+}
+
+#webcam{
+margin-top:20px;
+border-radius:10px;
+border:2px solid #00ffcc;
+}
+
+#status{
+margin-top:10px;
+font-size:18px;
+color:#00ffcc;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🎮 Gesture Control Video</h2>
+
+<!-- FIXED VIDEO -->
+<video id="player" width="400" controls muted autoplay loop>
+  <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4">
+</video>
+
+<br>
+
+<!-- WEBCAM -->
+<video id="webcam" width="300" autoplay muted></video>
+<canvas id="canvas" width="300" height="200" style="display:none;"></canvas>
+
+<p id="status">Status: Waiting...</p>
+
+<script>
+
+const webcam = document.getElementById("webcam");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const player = document.getElementById("player");
+const statusText = document.getElementById("status");
+
+let lastFrame = null;
+
+// CAMERA
+async function setupCamera(){
+const stream = await navigator.mediaDevices.getUserMedia({video:true});
+webcam.srcObject = stream;
+}
+
+setupCamera();
+
+// MOTION DETECTION
+function detectMotion(){
+
+ctx.drawImage(webcam,0,0,300,200);
+const frame = ctx.getImageData(0,0,300,200);
+
+if(lastFrame){
+
+let diff = 0;
+
+for(let i=0;i<frame.data.length;i+=4){
+diff += Math.abs(frame.data[i] - lastFrame.data[i]);
+}
+
+diff = diff / 10000;
+
+// IMPROVED CONTROL
+if(diff > 8){
+player.play();
+statusText.innerText = "✋ Movement → PLAY ▶️";
+}else{
+player.pause();
+statusText.innerText = "🤚 No Movement → PAUSE ⏸️";
+}
+
+}
+
+lastFrame = frame;
+
+requestAnimationFrame(detectMotion);
+}
+
+detectMotion();
+
+</script>
+
+</body>
+</html>
+```

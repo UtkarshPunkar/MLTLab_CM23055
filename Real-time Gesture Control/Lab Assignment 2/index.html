@@ -1,0 +1,132 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Gesture Volume Control</title>
+
+<style>
+body{
+font-family:Segoe UI;
+text-align:center;
+background:#0f172a;
+color:white;
+}
+
+#player{
+margin-top:10px;
+border-radius:12px;
+box-shadow:0 0 20px rgba(0,0,0,0.6);
+}
+
+#webcam{
+margin-top:20px;
+border-radius:10px;
+border:2px solid #00ffcc;
+}
+
+#status{
+margin-top:10px;
+font-size:18px;
+color:#00ffcc;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>👍 Gesture Volume Control</h2>
+
+<video id="player" width="400" controls autoplay loop muted>
+  <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4">
+</video>
+
+<br>
+
+<video id="webcam" width="300" autoplay muted></video>
+<canvas id="canvas" width="300" height="200" style="display:none;"></canvas>
+
+<p id="status">Show hand ↑ or ↓ to control volume</p>
+
+<script>
+
+const webcam = document.getElementById("webcam");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const player = document.getElementById("player");
+const statusText = document.getElementById("status");
+
+let lastFrame = null;
+let lastY = null;
+
+// CAMERA
+async function setupCamera(){
+const stream = await navigator.mediaDevices.getUserMedia({video:true});
+webcam.srcObject = stream;
+}
+setupCamera();
+
+// DETECTION
+function detectGesture(){
+
+ctx.drawImage(webcam,0,0,300,200);
+const frame = ctx.getImageData(0,0,300,200);
+
+let motionY = 0;
+let count = 0;
+
+if(lastFrame){
+
+for(let y=0;y<200;y++){
+for(let x=0;x<300;x++){
+
+let i = (y*300 + x)*4;
+
+let diff = Math.abs(frame.data[i] - lastFrame.data[i]);
+
+if(diff > 20){
+motionY += y;
+count++;
+}
+}
+}
+
+if(count > 50){
+
+let avgY = motionY / count;
+
+if(lastY !== null){
+
+// THUMBS UP (MOVE HAND UP)
+if(avgY < lastY - 5){
+player.volume = Math.min(1, player.volume + 0.05);
+statusText.innerText = "👍 Volume Up 🔊 : " + player.volume.toFixed(2);
+}
+
+// THUMBS DOWN (MOVE HAND DOWN)
+else if(avgY > lastY + 5){
+player.volume = Math.max(0, player.volume - 0.05);
+statusText.innerText = "👎 Volume Down 🔉 : " + player.volume.toFixed(2);
+}
+
+}
+
+lastY = avgY;
+
+}
+
+}
+
+lastFrame = frame;
+
+requestAnimationFrame(detectGesture);
+}
+
+detectGesture();
+
+</script>
+
+</body>
+</html>
+```

@@ -1,0 +1,118 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Thumbs Up Gesture Control</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+<style>
+body{
+text-align:center;
+background:#0f172a;
+color:white;
+font-family:Segoe UI;
+}
+
+video, canvas{
+border-radius:10px;
+margin-top:10px;
+}
+
+#webcam{
+border:2px solid #00ffcc;
+}
+
+#status{
+margin-top:10px;
+font-size:18px;
+color:#00ffcc;
+}
+</style>
+</head>
+
+<body>
+
+<h2>👍 Thumbs Up Gesture Control</h2>
+
+<!-- VIDEO -->
+<video id="player" width="400" controls>
+<source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" type="video/mp4">
+</video>
+
+<br><br>
+
+<!-- WEBCAM (FIXED: visible now) -->
+<video id="webcam" width="300" autoplay playsinline></video>
+<canvas id="canvas" width="300" height="200"></canvas>
+
+<p id="status">Show 👍 to Play</p>
+
+<script>
+
+const videoElement = document.getElementById('webcam');
+const canvasElement = document.getElementById('canvas');
+const canvasCtx = canvasElement.getContext('2d');
+const player = document.getElementById('player');
+const statusText = document.getElementById('status');
+
+// MEDIAPIPE HANDS
+const hands = new Hands({
+locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+
+hands.setOptions({
+maxNumHands: 1,
+modelComplexity: 1,
+minDetectionConfidence: 0.7,
+minTrackingConfidence: 0.7
+});
+
+// DETECT GESTURE
+hands.onResults(results => {
+
+canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
+
+// SAFETY CHECK
+if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0){
+
+const landmarks = results.multiHandLandmarks[0];
+
+// Draw hand
+drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS);
+drawLandmarks(canvasCtx, landmarks);
+
+// Thumb tip = 4, base = 2
+const thumbTip = landmarks[4];
+const thumbBase = landmarks[2];
+
+// 👍 THUMBS UP
+if(thumbTip.y < thumbBase.y){
+player.play();
+statusText.innerText = "👍 Thumbs Up → PLAY ▶️";
+}else{
+statusText.innerText = "Show 👍 gesture";
+}
+
+}
+
+});
+
+// CAMERA START
+const camera = new Camera(videoElement, {
+onFrame: async () => {
+await hands.send({image: videoElement});
+},
+width: 300,
+height: 200
+});
+
+camera.start();
+
+</script>
+
+</body>
+</html>
+```
