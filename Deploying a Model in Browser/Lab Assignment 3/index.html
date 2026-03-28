@@ -1,0 +1,155 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Incremental Learning</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+</head>
+
+<body>
+
+<h2>Incremental Learning Demo</h2>
+
+<button onclick="train2()">Train (2 Classes)</button>
+<button onclick="addClass()">Add 3rd Class & Retrain</button>
+
+<p id="output"></p>
+<pre id="matrix"></pre>
+
+<script>
+
+let model;
+
+// CREATE MODEL
+function createModel(outputUnits){
+const m = tf.sequential();
+m.add(tf.layers.dense({units:16, activation:'relu', inputShape:[2]}));
+m.add(tf.layers.dense({units:outputUnits, activation:'softmax'}));
+
+m.compile({
+optimizer:'adam',
+loss:'categoricalCrossentropy',
+metrics:['accuracy']
+});
+return m;
+}
+
+// TRAIN WITH 2 CLASSES
+async function train2(){
+
+model = createModel(2);
+
+const xs = tf.tensor2d([
+1,2,
+1.1,2.1,
+2,1,
+2.2,1.2
+],[4,2]);
+
+const ys = tf.tensor2d([
+1,0,
+1,0,
+0,1,
+0,1
+],[4,2]);
+
+await model.fit(xs, ys, {epochs:100});
+
+evaluate2();
+}
+
+// EVALUATE (2 CLASS)
+async function evaluate2(){
+
+const xTest = tf.tensor2d([
+1,2,
+2,1
+],[2,2]);
+
+const yTrue = [0,1];
+
+const preds = model.predict(xTest);
+const predData = await preds.array();
+
+let yPred = predData.map(p => p.indexOf(Math.max(...p)));
+
+let correct = yTrue.filter((v,i)=>v===yPred[i]).length;
+let acc = (correct/yTrue.length)*100;
+
+document.getElementById("output").innerText =
+"Accuracy (2 classes): " + acc.toFixed(2) + "%";
+}
+
+// ADD 3rd CLASS
+async function addClass(){
+
+model = createModel(3);
+
+const xs = tf.tensor2d([
+1,2,
+1.1,2.1,
+2,1,
+2.2,1.2,
+3,3,
+3.1,3.2
+],[6,2]);
+
+const ys = tf.tensor2d([
+1,0,0,
+1,0,0,
+0,1,0,
+0,1,0,
+0,0,1,
+0,0,1
+],[6,3]);
+
+await model.fit(xs, ys, {epochs:100});
+
+evaluate3();
+}
+
+// EVALUATE (3 CLASS)
+async function evaluate3(){
+
+const xTest = tf.tensor2d([
+1,2,
+2,1,
+3,3
+],[3,2]);
+
+const yTrue = [0,1,2];
+
+const preds = model.predict(xTest);
+const predData = await preds.array();
+
+let yPred = predData.map(p => p.indexOf(Math.max(...p)));
+
+let correct = yTrue.filter((v,i)=>v===yPred[i]).length;
+let acc = (correct/yTrue.length)*100;
+
+// CONFUSION MATRIX
+let matrix = [
+[0,0,0],
+[0,0,0],
+[0,0,0]
+];
+
+for(let i=0;i<yTrue.length;i++){
+matrix[yTrue[i]][yPred[i]]++;
+}
+
+// DISPLAY
+document.getElementById("output").innerText +=
+"\nAccuracy (3 classes): " + acc.toFixed(2) + "%";
+
+document.getElementById("matrix").innerText =
+"Confusion Matrix:\n\n" +
+matrix.map(r => r.join("   ")).join("\n");
+
+}
+
+</script>
+
+</body>
+</html>
+```

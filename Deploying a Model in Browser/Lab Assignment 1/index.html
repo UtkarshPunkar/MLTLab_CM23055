@@ -1,0 +1,112 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Transfer Learning - Fruits</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
+
+<style>
+body{
+font-family:Segoe UI;
+text-align:center;
+background:#eef2f7;
+}
+
+img{
+width:200px;
+margin-top:10px;
+border-radius:10px;
+}
+
+button{
+margin:10px;
+padding:10px 15px;
+font-size:16px;
+background:#4cafef;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>MobileNet Transfer Learning (Fruits)</h2>
+
+<input type="file" id="imageUpload" accept="image/*">
+
+<br>
+
+<img id="preview">
+
+<br>
+
+<button onclick="addExample(0)">Add Apple</button>
+<button onclick="addExample(1)">Add Banana</button>
+<button onclick="addExample(2)">Add Orange</button>
+
+<br>
+
+<button onclick="predict()">Predict</button>
+
+<p id="result">Result: </p>
+
+<script>
+
+let net;
+let classifier;
+
+const img = document.getElementById("preview");
+
+// LOAD MODEL
+async function load(){
+net = await mobilenet.load();
+classifier = knnClassifier.create();
+}
+
+load();
+
+// SHOW IMAGE
+document.getElementById("imageUpload").addEventListener("change", function(event){
+const file = event.target.files[0];
+img.src = URL.createObjectURL(file);
+});
+
+// ADD TRAINING
+function addExample(classId){
+
+const activation = net.infer(img, true);
+classifier.addExample(activation, classId);
+
+console.log("Added class:", classId);
+}
+
+// PREDICT
+async function predict(){
+
+if(classifier.getNumClasses() === 0){
+alert("Add training data first!");
+return;
+}
+
+const activation = net.infer(img, true);
+const result = await classifier.predictClass(activation);
+
+const classes = ["Apple 🍎","Banana 🍌","Orange 🍊"];
+
+document.getElementById("result").innerText =
+"Result: " + classes[result.label] +
+" (" + (result.confidences[result.label]*100).toFixed(2) + "%)";
+}
+
+</script>
+
+</body>
+</html>
+```
