@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AI vs Real Image Detector</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+<style>
+body{
+font-family:Segoe UI;
+text-align:center;
+background:#0f172a;
+color:white;
+margin:0;
+}
+
+.container{
+margin-top:40px;
+}
+
+img{
+width:300px;
+border-radius:12px;
+margin-top:15px;
+box-shadow:0 0 15px rgba(0,0,0,0.5);
+}
+
+button{
+margin-top:15px;
+padding:10px 25px;
+background:#00ffcc;
+border:none;
+border-radius:8px;
+font-size:16px;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+background:#00ddb3;
+}
+
+button:disabled{
+background:gray;
+cursor:not-allowed;
+}
+
+#result{
+margin-top:20px;
+font-size:20px;
+color:#00ffcc;
+}
+
+.loader{
+margin-top:15px;
+font-size:16px;
+color:#ffcc00;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🤖 AI vs Real Image Detector</h2>
+
+<div class="container">
+
+<input type="file" id="upload"><br>
+
+<img id="preview" src="" alt="Preview will appear here">
+
+<br>
+
+<button id="detectBtn" onclick="predict()" disabled>Detect</button>
+
+<p id="result">⏳ Loading model...</p>
+
+</div>
+
+<script>
+
+let model = null;
+
+// LOAD MODEL
+async function loadModel(){
+try{
+model = await tf.loadLayersModel('model/model.json');
+
+document.getElementById("result").innerText = "✅ Model Loaded! Now upload image.";
+document.getElementById("detectBtn").disabled = false;
+
+console.log("Model Loaded");
+
+}catch(err){
+console.error(err);
+document.getElementById("result").innerText = "❌ Error loading model!";
+}
+}
+
+loadModel();
+
+// IMAGE UPLOAD
+document.getElementById("upload").onchange = e=>{
+const file = e.target.files[0];
+const img = document.getElementById("preview");
+
+img.src = URL.createObjectURL(file);
+};
+
+// PREDICTION
+async function predict(){
+
+if(!model){
+alert("⏳ Model still loading...");
+return;
+}
+
+const img = document.getElementById("preview");
+
+if(!img.src){
+alert("⚠️ Please upload an image first");
+return;
+}
+
+document.getElementById("result").innerText = "🔍 Detecting...";
+
+let tensor = tf.browser.fromPixels(img)
+.resizeNearestNeighbor([224,224])
+.toFloat()
+.div(255.0)
+.expandDims();
+
+const prediction = await model.predict(tensor).data();
+
+const confidence = (prediction[0]*100).toFixed(2);
+
+const result = prediction[0] > 0.5 ? "🧠 AI Generated" : "📷 Real Image";
+
+document.getElementById("result").innerText =
+result + " (" + confidence + "% confidence)";
+
+}
+
+</script>
+
+</body>
+</html>
