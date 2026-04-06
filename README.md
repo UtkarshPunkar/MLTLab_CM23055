@@ -19,18 +19,18 @@ The objective of this course is to provide hands-on experience with modern ML te
 
 ## 📚 Practicals Index
 
-| Sr. No. | Practical |
-|--------|----------|
-| 0 | [Pre-Lab](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/HelloTensorFlowJS) |
-| 1 | [Practical 1](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Linear%20Regression%20with%20Synthetic%20Data) |
-| 2 | [Practical 2](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Digit%20Recognition%20(MNIST%20Dataset)) |
-| 3 | [Practical 3](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Text%20Sentiment%20Analysis) |
-| 4 | [Practical 4](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Image%20Classification%20with%20Pre-trained%20Model) |
-| 5 | [Practical 5](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Webcam-based%20Object%20Detection) |
-| 6 | [Practical 6](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Pose%20Detection%20with%20PoseNet) |
-| 7 | [Practical 7](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Deploying%20a%20Model%20in%20Browser) |
-| 8 | [Practical 8](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Real-time%20Gesture%20Control) |
-| 9 | [Post-Lab](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/ai-image-detector) |
+| Sr. No. | Practical Name | Link |
+|--------|----------------|------|
+| 0 | Hello TensorFlow.js | [Pre-Lab](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/HelloTensorFlowJS) |
+| 1 | Linear Regression with Synthetic Data | [Practical 1](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Linear%20Regression%20with%20Synthetic%20Data) |
+| 2 | Digit Recognition (MNIST Dataset) | [Practical 2](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Digit%20Recognition%20(MNIST%20Dataset)) |
+| 3 | Text Sentiment Analysis | [Practical 3](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Text%20Sentiment%20Analysis) |
+| 4 | Image Classification with Pre-trained Model (MobileNet) | [Practical 4](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Image%20Classification%20with%20Pre-trained%20Model) |
+| 5 | Webcam-based Object Detection | [Practical 5](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Webcam-based%20Object%20Detection) |
+| 6 | Pose Detection with PoseNet | [Practical 6](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Pose%20Detection%20with%20PoseNet) |
+| 7 | Deploying a Model in Browser | [Practical 7](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Deploying%20a%20Model%20in%20Browser) |
+| 8 | Real-time Gesture Control | [Practical 8](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/Real-time%20Gesture%20Control) |
+| 9 | AI Image Detector | [Post-Lab](https://github.com/UtkarshPunkar/MLTLab_CM23055/tree/main/ai-image-detector) |
 
 ---
 
