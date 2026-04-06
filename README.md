@@ -14,7 +14,24 @@ The objective of this course is to provide hands-on experience with modern ML te
 - **Repository:** MLTLab_CM23055  
 - **Technology Stack:** JavaScript + TensorFlow.js  
 - **Platform:** Web Browser  
- 
+
+---
+
+## 📚 Practicals Index
+
+| Sr. No. | Practical |
+|--------|----------|
+| 0 | [Pre-Lab](./Pre-Lab) |
+| 1 | [Practical 1](./Practical-1) |
+| 2 | [Practical 2](./Practical-2) |
+| 3 | [Practical 3](./Practical-3) |
+| 4 | [Practical 4](./Practical-4) |
+| 5 | [Practical 5](./Practical-5) |
+| 6 | [Practical 6](./Practical-6) |
+| 7 | [Practical 7](./Practical-7) |
+| 8 | [Practical 8](./Practical-8) |
+| 9 | [Post-Lab](./Post-Lab) |
+
 ---
 
 ## 📁 Repository Structure:
