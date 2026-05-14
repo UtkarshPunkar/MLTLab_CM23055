@@ -50,6 +50,7 @@ All experiments are committed separately to maintain clear version history.
 
 This lab strengthened my understanding of Machine Learning concepts through practical implementation in a browser environment.  
 It bridges the gap between theory and real-world applications by focusing on interactive, real-time ML systems.
+#Pair test 2
 
 ---
 
